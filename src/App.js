@@ -8,54 +8,82 @@ import { Slate, Editable, withReact } from 'slate-react'
 import EditorRenderElement from './elements/elements'
 import EditorRenderLeaf from './elements/leaves'
 
-function EditorOnKeyDown(event, editor) {
 
-  console.log(event.key)
+// Check if currently selected block is of type `type`.
+function isBlockTypeActive(editor, type) {
+  // For future me, this square bracket notation is pulling out the first value from the generator
+  // that is returned from Editor.nodes. Unsure why just using something like [0] doesn't work. Maybe there
+  // is a .next equivalent that is needed or something. :shrug:
+  const [match] = Editor.nodes(editor, {
+    match: n => n.type === type,
+  })
+  
+  return !!match
+}
+
+// Toggle the currently selected blocks to newType.
+function toggleBlock(editor, isActive, newType) {
+  Transforms.setNodes(
+    editor,
+    { type: isActive ? null : newType },
+    { match: n => Editor.isBlock(editor, n) }
+  )
+}
+
+
+// Check if currently selected block is of type `type`.
+function isBlockAttributeActive(editor, attribute) {
+  const [match] = Editor.nodes(editor, {
+    match: n => n[attribute] === true,
+    universal: true
+  })
+  
+  return !!match
+}
+
+// Toggle the currently selected blocks to `attribute`.
+function toggleTextAttribute(editor, isActive, attribute) {
+  Transforms.setNodes(
+    editor,
+    { [attribute]: isActive ? null : true },
+    { match: n => Text.isText(n), split: true }
+  )
+}
+
+function toggleCodeBlock(editor) {
+  const isActive = isBlockTypeActive(editor, 'code')
+  toggleBlock(editor, isActive, 'code')
+}
+
+function toggleBoldText(editor) {
+  const isActive = isBlockAttributeActive(editor, 'bold')
+  toggleTextAttribute(editor, isActive, 'bold')
+}
+
+function toggleItalicText(editor) {
+  const isActive = isBlockAttributeActive(editor, 'italic')
+  toggleTextAttribute(editor, isActive, 'italic')
+}
+
+
+function EditorOnKeyDown(event, editor) {
   
   if (event.metaKey) {
     switch (event.key) {
       case 'c': {
       // Prevent the "`" from being inserted by default.
         event.preventDefault()
-        // Determine whether any of the currently selected blocks are code blocks.
-        const [match] = Editor.nodes(
-          editor,
-          {match: (n) => n.type === 'code'}
-        )
-        // Otherwise, set the currently selected blocks type to "code".
-        Transforms.setNodes(
-          editor,
-          { type: match ? 'paragraph' : 'code' },
-          { match: n => Editor.isBlock(editor, n) },
-        )
+        toggleCodeBlock(editor)
         break
       }
       case 'b': {
         event.preventDefault()
-        Transforms.setNodes(
-          editor,
-          { bold: true },
-          // Apply it to text nodes, and split the text node up if the
-          // selection is overlapping only part of it.
-          {
-            match: n => Text.isText(n),
-            split: true,
-          }
-        )
+        toggleBoldText(editor)
         break
       }
       case 'i': {
         event.preventDefault()
-        Transforms.setNodes(
-          editor,
-          { italic: true },
-          // Apply it to text nodes, and split the text node up if the
-          // selection is overlapping only part of it.
-          {
-            match: n => Text.isText(n),
-            split: true,
-          }
-        )
+        toggleItalicText(editor)
         break
       }
     }
@@ -68,11 +96,27 @@ function EditorOnKeyDown(event, editor) {
   }
 }
 
+function onChange(editor, setValueFunc, newValue) {
+  setValueFunc(newValue)
+
+  const isASTChange = editor.operations.some(
+    op => 'set_selection' !== op.type
+  )
+
+  if (isASTChange) {
+    // Save the value to Local Storage.
+    const valueJSON = JSON.stringify(newValue)
+    localStorage.setItem('editorContent', valueJSON)
+  }
+}
+
 function App() {
   // Create a Slate editor object that won't change across renders.
   const editor = useMemo(() => withReact(createEditor()), [])
   // Keep track of state for the value of the editor.
-  const [value, setValue] = useState(initialTestState)
+  const [value, setValue] = useState(
+    JSON.parse(localStorage.getItem('editorContent')) || initialTestState
+  )
   const callbackRenderElement = useCallback(EditorRenderElement, [])
   const callbackRenderLeaf = useCallback(EditorRenderLeaf, [])
 
@@ -83,7 +127,12 @@ function App() {
       <header className='App-header'>
         <img src={logo} className='App-logo' alt='logo' />
       </header>
-      <Slate editor={editor} value={value} onChange={(v) => setValue(v)}>
+      <Slate
+        editor={editor}
+        value={value}
+        onChange={(value) => onChange(editor, setValue, value)}
+      >
+        <ToolBar editor={editor} />
         <Editable
           onKeyDown={(event) => EditorOnKeyDown(event, editor)}
           renderLeaf={callbackRenderLeaf}
@@ -96,6 +145,36 @@ function App() {
 
 export default App
 
+function ToolBar({editor}) {
+  return (
+    <div>
+      <button
+        onMouseDown={event => {
+          event.preventDefault()
+          toggleBoldText(editor)
+        }}
+      >
+      Bold
+      </button>
+      <button
+        onMouseDown={event => {
+          event.preventDefault()
+          toggleItalicText(editor)
+        }}
+      >
+      Italic
+      </button>
+      <button
+        onMouseDown={event => {
+          event.preventDefault()
+          toggleCodeBlock(editor)
+        }}
+      >
+      Code Block
+      </button>
+    </div>
+  )
+}
 
 
 
