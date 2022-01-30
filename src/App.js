@@ -1,12 +1,17 @@
+/* eslint-disable no-unused-vars */
 import logo from './logo.svg'
 import './App.css'
 
 // Import React dependencies.
-import React, { useMemo, useState, useCallback } from 'react'
-import { createEditor, Editor, Text, Transforms } from 'slate'
-import { Slate, Editable, withReact } from 'slate-react'
-import EditorRenderElement from './elements/elements'
-import EditorRenderLeaf from './elements/leaves'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Editor, Text, Transforms } from 'slate'
+import { Plate } from '@udecode/plate'
+import {firestoreDB, getAllNotes, setNote} from './firebase'
+import { debounce } from 'lodash'
+import Alert from 'react-bootstrap/Alert'
+
+import 'bootstrap/dist/css/bootstrap.min.css'
+
 
 
 // Check if currently selected block is of type `type`.
@@ -96,49 +101,81 @@ function EditorOnKeyDown(event, editor) {
   }
 }
 
-function onChange(editor, setValueFunc, newValue) {
-  setValueFunc(newValue)
-
-  const isASTChange = editor.operations.some(
-    op => 'set_selection' !== op.type
-  )
-
-  if (isASTChange) {
-    // Save the value to Local Storage.
-    const valueJSON = JSON.stringify(newValue)
-    localStorage.setItem('editorContent', valueJSON)
-  }
-}
-
 function App() {
-  // Create a Slate editor object that won't change across renders.
-  const editor = useMemo(() => withReact(createEditor()), [])
-  // Keep track of state for the value of the editor.
-  const [value, setValue] = useState(
-    JSON.parse(localStorage.getItem('editorContent')) || initialTestState
-  )
-  const callbackRenderElement = useCallback(EditorRenderElement, [])
-  const callbackRenderLeaf = useCallback(EditorRenderLeaf, [])
+  const [state, setState] = useState({
+    noteID: '',
+    noteTitle: '',
+    noteContent: [
+      {
+        'type': 'paragraph',
+        'children': [
+          {
+            'text': 'Loading...'
+          }
+        ]
+      }
+    ],
+    isLoaded: false,
+  })
+  const [showSaveAlert, setShowSaveAlert] = useState(true)
+  
+  const debounceCallback = useCallback(
+    debounce((newState) => debounceHandler(newState), 1000),
+    [])
 
-  console.log(`value/state: ${JSON.stringify(value, null, 4)}`)
-
+  function debounceHandler(newState) {
+    setNote(firestoreDB, newState)
+    setShowSaveAlert(true)
+    setTimeout(() => setShowSaveAlert(false), 1500)
+  }
+  
+  function onChange(newValue) {
+    setState({...state, noteContent: newValue})
+    debounceCallback({...state, noteContent: newValue})
+  }
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      return await getAllNotes(firestoreDB)
+    }
+    fetchData()
+      .then((allNotes) => {
+        const note = allNotes[0]
+        setState({
+          noteID: note.id,
+          noteTitle: note.data.title,
+          noteContent: note.data.editorContent,
+          isLoaded: true,
+        })
+      })
+      .catch((err) => {console.log('Error fetching firebase notes', err)})
+  }, [])
+  
   return (
     <div className='App'>
       <header className='App-header'>
         <img src={logo} className='App-logo' alt='logo' />
       </header>
-      <Slate
-        editor={editor}
-        value={value}
-        onChange={(value) => onChange(editor, setValue, value)}
-      >
-        <ToolBar editor={editor} />
-        <Editable
-          onKeyDown={(event) => EditorOnKeyDown(event, editor)}
-          renderLeaf={callbackRenderLeaf}
-          renderElement={callbackRenderElement}
-        />
-      </Slate>
+      <div className='editor-container'>
+        {
+          state.isLoaded ?
+            <Plate
+              id="1"
+              initialValue={state.noteContent}
+              onChange={onChange}
+            >
+            </Plate>
+            :
+            <Plate
+              id="loading"
+              initialValue={state.noteContent}
+            >
+            </Plate>
+        }
+      </div>
+      <Alert show={showSaveAlert} variant="success">
+          Saved
+      </Alert>
     </div>
   )
 }
@@ -179,6 +216,7 @@ function ToolBar({editor}) {
 
 
 
+// eslint-disable-next-line no-unused-vars
 const initialTestState = [
   {
     'type': 'paragraph',
