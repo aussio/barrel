@@ -108,10 +108,15 @@ function InsertEditorButton() {
 }
 
 function insertEditor(editor) {
-  const editorNode = {
-    type: 'editor',
-    children: [{ text: 'what' }],
-  }
+  const editorNode = [
+    {
+      type: 'editor',
+      children: [{ text: 'what' }]
+    },
+    // Add some text space after Notecard, else you can't
+    // insert text after it as there are no "text" nodes to select.
+    emptyParagraph,
+  ]
   Transforms.insertNodes(editor, editorNode)
 }
 
@@ -160,20 +165,19 @@ function ExampleEditor({withAddButton}) {
   return (
     <Slate
       editor={editor}
-      value={emptyParagraph}
-      onChange={ v => console.log(editor.selection)
-        
-        // value => {
-        // const isAstChange = editor.operations.some(
-        //   op => 'set_selection' !== op.type
-        // )
-        // if (isAstChange) {
-        //   // Save the value to Local Storage.
-        //   const content = JSON.stringify(value)
-        //   localStorage.setItem('content', content)
-        // }
-        // }
-      }
+      value={[emptyParagraph]}
+      // onChange={
+      // value => {
+      // const isAstChange = editor.operations.some(
+      //   op => 'set_selection' !== op.type
+      // )
+      // if (isAstChange) {
+      //   // Save the value to Local Storage.
+      //   const content = JSON.stringify(value)
+      //   localStorage.setItem('content', content)
+      // }
+      // }
+      // }
     >
       {withAddButton ? <InsertEditorButton /> : null}
       <Editable
@@ -254,18 +258,16 @@ const Leaf = ({ attributes, children, leaf }) => {
 //   )
 // }
 
-const emptyParagraph = [
-  {
-    type: 'paragraph',
-    children: [{ text: '' }],
-  },
-]
+const emptyParagraph = {
+  type: 'paragraph',
+  children: [{ text: '' }],
+}
 
 const emptyNote = {
   id: 'foo',
   data: {
     title: '',
-    editorContent: [{ type: 'paragraph', children: [{ text: '' }] }]
+    editorContent: [emptyParagraph]
   },
 }
 
