@@ -3,259 +3,270 @@ import logo from './logo.svg'
 import './App.css'
 
 // Import React dependencies.
-import React, { useState, useEffect, useCallback } from 'react'
-import { Editor, Text, Transforms } from 'slate'
-import { Plate } from '@udecode/plate'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+// Import the Slate editor factory.
+import { createEditor, Transforms, Editor } from 'slate'
+// Import the Slate components and React plugin.
+import { Slate, Editable, withReact, useSlateStatic } from 'slate-react'
+import { withHistory } from 'slate-history'
+
 import {firestoreDB, getAllNotes, setNote} from './firebase'
 import { debounce } from 'lodash'
 import Alert from 'react-bootstrap/Alert'
+import Button from 'react-bootstrap/Button'
 
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 
 
-// Check if currently selected block is of type `type`.
-function isBlockTypeActive(editor, type) {
-  // For future me, this square bracket notation is pulling out the first value from the generator
-  // that is returned from Editor.nodes. Unsure why just using something like [0] doesn't work. Maybe there
-  // is a .next equivalent that is needed or something. :shrug:
-  const [match] = Editor.nodes(editor, {
-    match: n => n.type === type,
-  })
-  
-  return !!match
-}
-
-// Toggle the currently selected blocks to newType.
-function toggleBlock(editor, isActive, newType) {
-  Transforms.setNodes(
-    editor,
-    { type: isActive ? null : newType },
-    { match: n => Editor.isBlock(editor, n) }
-  )
-}
-
-
-// Check if currently selected block is of type `type`.
-function isBlockAttributeActive(editor, attribute) {
-  const [match] = Editor.nodes(editor, {
-    match: n => n[attribute] === true,
-    universal: true
-  })
-  
-  return !!match
-}
-
-// Toggle the currently selected blocks to `attribute`.
-function toggleTextAttribute(editor, isActive, attribute) {
-  Transforms.setNodes(
-    editor,
-    { [attribute]: isActive ? null : true },
-    { match: n => Text.isText(n), split: true }
-  )
-}
-
-function toggleCodeBlock(editor) {
-  const isActive = isBlockTypeActive(editor, 'code')
-  toggleBlock(editor, isActive, 'code')
-}
-
-function toggleBoldText(editor) {
-  const isActive = isBlockAttributeActive(editor, 'bold')
-  toggleTextAttribute(editor, isActive, 'bold')
-}
-
-function toggleItalicText(editor) {
-  const isActive = isBlockAttributeActive(editor, 'italic')
-  toggleTextAttribute(editor, isActive, 'italic')
-}
-
-
-function EditorOnKeyDown(event, editor) {
-  
-  if (event.metaKey) {
-    switch (event.key) {
-      case 'c': {
-      // Prevent the "`" from being inserted by default.
-        event.preventDefault()
-        toggleCodeBlock(editor)
-        break
-      }
-      case 'b': {
-        event.preventDefault()
-        toggleBoldText(editor)
-        break
-      }
-      case 'i': {
-        event.preventDefault()
-        toggleItalicText(editor)
-        break
-      }
-    }
-  }
-  if (event.key === '&') {
-    // Prevent the ampersand character from being inserted.
-    event.preventDefault()
-    // Execute the `insertText` method when the event occurs.
-    editor.insertText('and')
-  }
-}
-
 function App() {
   const [state, setState] = useState({
-    noteID: '',
-    noteTitle: '',
-    noteContent: [
-      {
-        'type': 'paragraph',
-        'children': [
-          {
-            'text': 'Loading...'
-          }
-        ]
-      }
-    ],
-    isLoaded: false,
+    notes: [],
+    isLoading: false,
   })
-  const [showSaveAlert, setShowSaveAlert] = useState(true)
+  const [editor] = useState(() => withSubEditors(withHistory(withReact(createEditor()))))
   
-  const debounceCallback = useCallback(
-    debounce((newState) => debounceHandler(newState), 1000),
-    [])
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     return await getAllNotes(firestoreDB)
+  //   }
+  //   fetchData()
+  //     .then((allNotes) => {
+  //       setState({
+  //         notes: allNotes,
+  //         isLoading: false,
+  //       })
+  //     })
+  //     .catch((err) => {console.log('Error fetching firebase notes', err)})
+  // }, [])
 
-  function debounceHandler(newState) {
-    setNote(firestoreDB, newState)
-    setShowSaveAlert(true)
-    setTimeout(() => setShowSaveAlert(false), 1500)
+  function addNewNote() {
+    setState({
+      ...state,
+      notes: [...state.notes, emptyNote],
+    })
   }
-  
-  function onChange(newValue) {
-    setState({...state, noteContent: newValue})
-    debounceCallback({...state, noteContent: newValue})
-  }
-  
-  useEffect(() => {
-    const fetchData = async () => {
-      return await getAllNotes(firestoreDB)
-    }
-    fetchData()
-      .then((allNotes) => {
-        const note = allNotes[0]
-        setState({
-          noteID: note.id,
-          noteTitle: note.data.title,
-          noteContent: note.data.editorContent,
-          isLoaded: true,
-        })
-      })
-      .catch((err) => {console.log('Error fetching firebase notes', err)})
-  }, [])
   
   return (
     <div className='App'>
       <header className='App-header'>
         <img src={logo} className='App-logo' alt='logo' />
       </header>
-      <div className='editor-container'>
-        {
-          state.isLoaded ?
-            <Plate
-              id="1"
-              initialValue={state.noteContent}
-              onChange={onChange}
-            >
-            </Plate>
-            :
-            <Plate
-              id="loading"
-              initialValue={state.noteContent}
-            >
-            </Plate>
-        }
+      {/* {
+        state.isLoading ?
+          <SlateEditor
+            id="loading"
+            value={[]}
+          />
+          :
+          state.notes.map((note) => {
+            console.log(`map iter ${note.id}`)
+            return (
+              <SlateEditor
+                key={note.id}
+                id={note.id}
+                title={note.data.title}
+                value={note.data.editorContent}
+              />
+            )
+          })
+      } */}
+      <div style={{
+        border: '1px solid grey',
+        padding: '0.5rem',
+        minWidth: '500px'
+      }}>
+        <ExampleEditor withAddButton/>
       </div>
-      <Alert show={showSaveAlert} variant="success">
-          Saved
-      </Alert>
     </div>
   )
+}
+
+function withSubEditors(editor) {
+  const { isEditor } = editor
+
+  editor.isEditor = element => {
+    return element.type === 'editor' ? true : isEditor(element)
+  }
+
+  return editor
+}
+
+function InsertEditorButton() {
+  const editor = useSlateStatic()
+  return (
+    <Button
+      variant="outline-primary"
+      onMouseDown={event => {
+        event.preventDefault()
+        insertEditor(editor)
+      }}
+    >
+      Add Note
+    </Button>
+  )
+}
+
+function insertEditor(editor) {
+  const editorNode = {
+    type: 'editor',
+    children: [{ text: 'what' }],
+  }
+  Transforms.insertNodes(editor, editorNode)
+}
+
+const withEditableVoids = editor => {
+  const { isVoid } = editor
+
+  editor.isVoid = element => {
+    return element.type === 'editor' ? true : isVoid(element)
+  }
+
+  return editor
+}
+
+
+function SubEditor({ attributes, children }) {
+  return (
+    <div
+      {...attributes} contentEditable={false}
+      style={{
+        border: '2px solid #5dabff',
+        borderRadius: '0.25rem',
+        padding: '0.5rem',
+      }}
+    >
+      <ExampleEditor />
+      {children}
+    </div>
+  )
+}
+
+function ExampleEditor({withAddButton}) {
+  const editor = useMemo(() => withEditableVoids(withHistory(withReact(createEditor()))), [])
+  
+  const renderLeaf = useCallback(props => <Leaf {...props} />, [])
+  const renderElement = useCallback(props => {
+    const { attributes, children, element } = props
+  
+    switch (element.type) {
+      case 'editor':
+        return <SubEditor {...props} />
+      default:
+        return <p {...attributes} style={{margin: 0}}>{children}</p>
+    }
+  }, [])
+
+  return (
+    <Slate
+      editor={editor}
+      value={emptyParagraph}
+      onChange={ v => null
+        
+        // value => {
+        // const isAstChange = editor.operations.some(
+        //   op => 'set_selection' !== op.type
+        // )
+        // if (isAstChange) {
+        //   // Save the value to Local Storage.
+        //   const content = JSON.stringify(value)
+        //   localStorage.setItem('content', content)
+        // }
+        // }
+      }
+    >
+      {withAddButton ? <InsertEditorButton /> : null}
+      <Editable
+        renderElement={renderElement}
+        renderLeaf={renderLeaf}
+        placeholder="ExampleEditor()..."
+        spellCheck
+        autoFocus
+      />
+    </Slate>
+  )
+}
+
+
+const Leaf = ({ attributes, children, leaf }) => {
+  if (leaf.bold) {
+    children = <strong>{children}</strong>
+  }
+
+  if (leaf.code) {
+    children = <code>{children}</code>
+  }
+
+  if (leaf.italic) {
+    children = <em>{children}</em>
+  }
+
+  if (leaf.underline) {
+    children = <u>{children}</u>
+  }
+
+  return <span {...attributes}>{children}</span>
+}
+
+
+// function PlateEditor({id, title, initialValue}) {
+
+//   const [state, setState] = useState({
+//     id: id,
+//     title: title,
+//     editorContent: initialValue,
+//   })
+
+//   console.log(id, initialValue)
+
+//   const [showSaveAlert, setShowSaveAlert] = useState(false)
+
+//   const debounceCallback = useCallback(
+//     debounce((newState) => debounceHandler(newState), 1000),
+//     [])
+
+//   function debounceHandler(newState) {
+//     setNote(firestoreDB, id, newState)
+//     setShowSaveAlert(true)
+//     setTimeout(() => setShowSaveAlert(false), 1500)
+//   }
+  
+//   function onChange(newValue) {
+//     setState({...state, noteContent: newValue})
+//     debounceCallback({...state, noteContent: newValue})
+//   }
+
+//   return (
+//     <div className='editor-container'>
+//       <h3>{title}</h3>
+//       <Plate
+//         id={id}
+//         initialValue={initialValue}
+//         onChange={onChange}
+//       >
+//       </Plate>
+//       <div className="saved-alert">
+//         <Alert show={showSaveAlert} variant="success">
+//           Saved
+//         </Alert>
+//       </div>
+//     </div>
+//   )
+// }
+
+const emptyParagraph = [
+  {
+    type: 'paragraph',
+    children: [{ text: '' }],
+  },
+]
+
+const emptyNote = {
+  id: 'foo',
+  data: {
+    title: '',
+    editorContent: [{ type: 'paragraph', children: [{ text: '' }] }]
+  },
 }
 
 export default App
-
-function ToolBar({editor}) {
-  return (
-    <div>
-      <button
-        onMouseDown={event => {
-          event.preventDefault()
-          toggleBoldText(editor)
-        }}
-      >
-      Bold
-      </button>
-      <button
-        onMouseDown={event => {
-          event.preventDefault()
-          toggleItalicText(editor)
-        }}
-      >
-      Italic
-      </button>
-      <button
-        onMouseDown={event => {
-          event.preventDefault()
-          toggleCodeBlock(editor)
-        }}
-      >
-      Code Block
-      </button>
-    </div>
-  )
-}
-
-
-
-
-// eslint-disable-next-line no-unused-vars
-const initialTestState = [
-  {
-    'type': 'paragraph',
-    'children': [
-      {
-        'text': 'Another line.'
-      }
-    ]
-  },
-  {
-    'type': 'paragraph',
-    'children': [
-      {
-        'text': 'A line of '
-      },
-      {
-        'text': 't',
-        'italic': true
-      },
-      {
-        'italic': true,
-        'text': 'ext',
-        'bold': true
-      },
-      {
-        'text': ' in a p',
-        'bold': true
-      },
-      {
-        'text': 'aragraph.'
-      }
-    ]
-  },
-  {
-    'type': 'paragraph',
-    'children': [
-      {
-        'text': 'Yet another line.'
-      }
-    ]
-  }
-]

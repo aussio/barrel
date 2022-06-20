@@ -28,7 +28,6 @@ async function getAllNotes(db) {
   const notesList = notesSnapshot.docs.map((doc) => {
     const data = doc.data()
     if (data.editorContent) {
-      console.log(data.editorContent)
       data.editorContent = JSON.parse(data.editorContent)
     }
     return {id: doc.id, data: data}
@@ -36,17 +35,16 @@ async function getAllNotes(db) {
   return notesList
 }
 
-async function setNote(db, state) {
-  const notesRef = doc(db, 'notes', state.noteID)
-  console.log(`Saving note ${state.noteID}`)
-  console.log(`Saving content ${JSON.stringify(state.noteContent)}`)
+async function setNote(db, id, editorContent) {
+  const notesRef = doc(db, 'notes', id)
+  console.log(`Saving note ${id}`)
+  console.log(`Saving content ${JSON.stringify(editorContent)}`)
   setDoc(
     notesRef,
     {
-      title: state.noteTitle,
-      editorContent: JSON.stringify(state.noteContent),
+      editorContent: JSON.stringify(editorContent),
     },
-    // { merge: true },
+    { merge: true },
   )
 }
 
