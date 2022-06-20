@@ -161,7 +161,7 @@ function ExampleEditor({withAddButton}) {
     <Slate
       editor={editor}
       value={emptyParagraph}
-      onChange={ v => null
+      onChange={ v => console.log(editor.selection)
         
         // value => {
         // const isAstChange = editor.operations.some(
