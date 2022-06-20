@@ -40,12 +40,12 @@ function App() {
   //     .catch((err) => {console.log('Error fetching firebase notes', err)})
   // }, [])
 
-  function addNewNote() {
-    setState({
-      ...state,
-      notes: [...state.notes, emptyNote],
-    })
-  }
+  // function addNewNote() {
+  //   setState({
+  //     ...state,
+  //     notes: [...state.notes, emptyNote],
+  //   })
+  // }
   
   return (
     <div className='App'>
@@ -115,7 +115,10 @@ function insertEditor(editor) {
     },
     // Add some text space after Notecard, else you can't
     // insert text after it as there are no "text" nodes to select.
-    emptyParagraph,
+    {
+      type: 'paragraph',
+      children: [{ text: '' }],
+    },
   ]
   Transforms.insertNodes(editor, editorNode)
 }
@@ -162,10 +165,17 @@ function ExampleEditor({withAddButton}) {
     }
   }, [])
 
+  // See this issue for why this can't be pulled into a const:
+  // https://github.com/ianstormtaylor/slate/issues/3802
+  const initialValue = [{
+    type: 'paragraph',
+    children: [{ text: '' }],
+  }]
+
   return (
     <Slate
       editor={editor}
-      value={[emptyParagraph]}
+      value={initialValue}
       // onChange={
       // value => {
       // const isAstChange = editor.operations.some(
@@ -257,18 +267,15 @@ const Leaf = ({ attributes, children, leaf }) => {
 //     </div>
 //   )
 // }
-
-const emptyParagraph = {
-  type: 'paragraph',
-  children: [{ text: '' }],
-}
-
-const emptyNote = {
-  id: 'foo',
-  data: {
-    title: '',
-    editorContent: [emptyParagraph]
-  },
-}
+// const emptyNote = {
+//   id: 'foo',
+//   data: {
+//     title: '',
+//     editorContent: [{
+//       type: 'paragraph',
+//       children: [{ text: '' }],
+//     }]
+//   },
+// }
 
 export default App
