@@ -18,14 +18,15 @@ import Button from 'react-bootstrap/Button'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 
+const PARENT_EDITOR_KEY = 'note-content'
+const EDITOR_TYPE = 'editor'
+
 
 function App() {
-  const [state, setState] = useState({
-    notes: [],
-    isLoading: false,
-  })
-  const [editor] = useState(() => withSubEditors(withHistory(withReact(createEditor()))))
-  
+  // const [state, setState] = useState({
+  //   notes: [],
+  //   isLoading: false,
+  // })
   // useEffect(() => {
   //   const fetchData = async () => {
   //     return await getAllNotes(firestoreDB)
@@ -76,7 +77,7 @@ function App() {
         padding: '0.5rem',
         minWidth: '500px'
       }}>
-        <ExampleEditor withAddButton/>
+        <ExampleEditor withAddButton editorKey={PARENT_EDITOR_KEY}/>
       </div>
     </div>
   )
@@ -86,32 +87,35 @@ function withSubEditors(editor) {
   const { isEditor } = editor
 
   editor.isEditor = element => {
-    return element.type === 'editor' ? true : isEditor(element)
+    return element.type === EDITOR_TYPE ? true : isEditor(element)
   }
 
   return editor
 }
 
-function InsertEditorButton() {
+function InsertEditorButton({editorKey, onClick}) {
   const editor = useSlateStatic()
   return (
     <Button
       variant="outline-primary"
       onMouseDown={event => {
         event.preventDefault()
-        insertEditor(editor)
+        onClick()
+        insertEditor(editor, editorKey)
       }}
     >
-      Add Note
+      Add Note: {editorKey}
     </Button>
   )
 }
 
-function insertEditor(editor) {
+function insertEditor(editor, editorKey) {
   const editorNode = [
     {
-      type: 'editor',
-      children: [{ text: 'what' }]
+      type: EDITOR_TYPE,
+      // This can't be empty for a quirk of selection I believe. Unsure.
+      children: [{ text: '' }],
+      editorKey: editorKey,
     },
     // Add some text space after Notecard, else you can't
     // insert text after it as there are no "text" nodes to select.
@@ -127,14 +131,14 @@ const withEditableVoids = editor => {
   const { isVoid } = editor
 
   editor.isVoid = element => {
-    return element.type === 'editor' ? true : isVoid(element)
+    return element.type === EDITOR_TYPE ? true : isVoid(element)
   }
 
   return editor
 }
 
 
-function SubEditor({ attributes, children }) {
+function EditorWrapper({ attributes, children, editorKey }) {
   return (
     <div
       {...attributes} contentEditable={false}
@@ -144,56 +148,75 @@ function SubEditor({ attributes, children }) {
         padding: '0.5rem',
       }}
     >
-      <ExampleEditor />
+      <ExampleEditor editorKey={editorKey} />
       {children}
     </div>
   )
 }
 
-function ExampleEditor({withAddButton}) {
+function ExampleEditor({withAddButton, editorKey}) {
   const editor = useMemo(() => withEditableVoids(withHistory(withReact(createEditor()))), [])
   
   const renderLeaf = useCallback(props => <Leaf {...props} />, [])
   const renderElement = useCallback(props => {
     const { attributes, children, element } = props
-  
     switch (element.type) {
-      case 'editor':
-        return <SubEditor {...props} />
+      case EDITOR_TYPE:
+        return <EditorWrapper {...props} editorKey={element.editorKey} />
       default:
         return <p {...attributes} style={{margin: 0}}>{children}</p>
     }
   }, [])
 
-  // See this issue for why this can't be pulled into a const:
-  // https://github.com/ianstormtaylor/slate/issues/3802
-  const initialValue = [{
-    type: 'paragraph',
-    children: [{ text: '' }],
-  }]
+  const initialValue = useMemo(
+    () =>
+    JSON.parse(localStorage.getItem(editorKey)) || 
+    // See this issue for why this can't be pulled into a const:
+    // https://github.com/ianstormtaylor/slate/issues/3802
+    [
+        {
+          type: 'paragraph',
+          children: [{ text: '' }],
+        },
+      ],
+    []
+  )
+
+  useEffect(() => {
+    let count = -1
+    for (let index = initialValue.length - 1; index >= 0; index--) {
+      const element = initialValue[index];
+      if (element.type === EDITOR_TYPE) {
+        count = element.editorKey
+        break;
+      }
+    }
+    setNextEditorCounter(count + 1)
+  }, [])
+
+  const [nextEditorCounter, setNextEditorCounter] = useState(0);
+
 
   return (
     <Slate
       editor={editor}
       value={initialValue}
-      // onChange={
-      // value => {
-      // const isAstChange = editor.operations.some(
-      //   op => 'set_selection' !== op.type
-      // )
-      // if (isAstChange) {
-      //   // Save the value to Local Storage.
-      //   const content = JSON.stringify(value)
-      //   localStorage.setItem('content', content)
-      // }
-      // }
-      // }
+      onChange={ value => {
+      const isAstChange = editor.operations.some(
+        op => 'set_selection' !== op.type
+      )
+      if (isAstChange) {
+        // Save the value to Local Storage.
+        const content = JSON.stringify(value)
+        localStorage.setItem(editorKey, content)
+      }
+    }}
     >
-      {withAddButton ? <InsertEditorButton /> : null}
+      {withAddButton ? <InsertEditorButton editorKey={nextEditorCounter} onClick={() => setNextEditorCounter(count => count + 1)} /> : null}
       <Editable
         renderElement={renderElement}
         renderLeaf={renderLeaf}
-        placeholder="ExampleEditor()..."
+        placeholder={`editorKey=${editorKey}`}
         spellCheck
         autoFocus
       />
