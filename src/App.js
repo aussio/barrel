@@ -5,7 +5,7 @@ import './App.css'
 // Import React dependencies.
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 // Import the Slate editor factory.
-import { createEditor, Transforms, Editor } from 'slate'
+import { createEditor, Transforms } from 'slate'
 // Import the Slate components and React plugin.
 import { Slate, Editable, withReact, useSlateStatic } from 'slate-react'
 import { withHistory } from 'slate-history'
@@ -81,16 +81,6 @@ function App() {
       </div>
     </div>
   )
-}
-
-function withSubEditors(editor) {
-  const { isEditor } = editor
-
-  editor.isEditor = element => {
-    return element.type === EDITOR_TYPE ? true : isEditor(element)
-  }
-
-  return editor
 }
 
 function InsertEditorButton({editorKey, onClick}) {
@@ -195,7 +185,6 @@ function ExampleEditor({withAddButton, editorKey}) {
   }, [])
 
   const [nextEditorCounter, setNextEditorCounter] = useState(0);
-
 
   return (
     <Slate
