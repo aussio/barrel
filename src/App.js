@@ -10,6 +10,8 @@ import { createEditor, Transforms } from 'slate'
 import { Slate, Editable, withReact, useSlateStatic } from 'slate-react'
 import { withHistory } from 'slate-history'
 
+import {getNoteFromStore, setNoteInStore, PARENT_EDITOR_KEY} from './store'
+
 import {firestoreDB, getAllNotes, setNote} from './firebase'
 import { debounce } from 'lodash'
 import Alert from 'react-bootstrap/Alert'
@@ -18,7 +20,6 @@ import Button from 'react-bootstrap/Button'
 import 'bootstrap/dist/css/bootstrap.min.css'
 
 
-const PARENT_EDITOR_KEY = 'note-content'
 const EDITOR_TYPE = 'editor'
 
 
@@ -94,7 +95,7 @@ function InsertEditorButton({editorKey, onClick}) {
         insertEditor(editor, editorKey)
       }}
     >
-      Add Note: {editorKey}
+      Add Notecard: {editorKey}
     </Button>
   )
 }
@@ -160,16 +161,16 @@ function ExampleEditor({withAddButton, editorKey}) {
 
   const initialValue = useMemo(
     () =>
-    JSON.parse(localStorage.getItem(editorKey)) || 
+    getNoteFromStore(editorKey) || 
     // See this issue for why this can't be pulled into a const:
     // https://github.com/ianstormtaylor/slate/issues/3802
     [
-        {
-          type: 'paragraph',
-          children: [{ text: '' }],
-        },
-      ],
-    []
+      {
+        type: 'paragraph',
+        children: [{ text: '' }],
+      },
+    ],
+    [editorKey]
   )
 
   useEffect(() => {
@@ -196,8 +197,7 @@ function ExampleEditor({withAddButton, editorKey}) {
       )
       if (isAstChange) {
         // Save the value to Local Storage.
-        const content = JSON.stringify(value)
-        localStorage.setItem(editorKey, content)
+        setNoteInStore(editorKey, value)
       }
     }}
     >
