@@ -1,43 +1,39 @@
 {
-    "env": {
-        "browser": true,
-        "es2021": true,
-        "node": true
-    },
     "extends": [
-        "eslint:recommended",
-        "plugin:react/recommended"
-    ],
-    "parserOptions": {
-        "ecmaFeatures": {
-            "jsx": true
-        },
-        "ecmaVersion": 13,
-        "sourceType": "module"
-    },
-    "plugins": [
-        "react"
+        "react-app",
+        "eslint-config-airbnb"
     ],
     "rules": {
-        "indent": [
+        "max-len": [
             "error",
-            2,
             {
-                "SwitchCase": 1
+                "code": 120
             }
         ],
-        "linebreak-style": [
-            "error",
-            "unix"
+        "react/jsx-filename-extension": [
+            1,
+            {
+                "extensions": [
+                    ".js",
+                    ".jsx"
+                ]
+            }
         ],
-        "quotes": [
+        "react/jsx-wrap-multilines": [
             "error",
-            "single"
+            {
+                "declaration": "parens-new-line",
+                "assignment": "parens-new-line",
+                "return": "parens-new-line",
+                "arrow": "parens-new-line",
+                "condition": "parens-new-line",
+                "logical": "parens-new-line",
+                "prop": "parens-new-line"
+            }
         ],
-        "semi": [
-            "error",
-            "never"
-        ],
-        "react/prop-types": "off"
+        "react/prop-types": "off",
+        "react/jsx-props-no-spreading": "off",
+        "camelcase": "off",
+        "no-use-before-define": "off"
     }
 }
