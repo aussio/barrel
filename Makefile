@@ -9,6 +9,3 @@ build:
 
 deploy:
 	firebase deploy --only hosting
-
-ci: lint build deploy
-	
