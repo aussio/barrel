@@ -7,5 +7,8 @@ run:
 build:
 	npx expo export:web
 
-ci: lint build
+deploy:
+	firebase deploy --only hosting
+
+ci: lint build deploy
 	
