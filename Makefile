@@ -4,5 +4,8 @@ lint:
 run:
 	npx expo start
 
-ci:
-	npm run build
+build:
+	npx expo export:web
+
+ci: lint build
+	
