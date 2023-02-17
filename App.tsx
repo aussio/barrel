@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
 import HomeScreen from './screens/Home';
-import SVGsScreen from './screens/SVGs';
+import SVGsScreen from './screens/SVGExamples/SVGsScreen';
 
 
 
