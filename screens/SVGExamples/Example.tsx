@@ -52,15 +52,18 @@ const exampleStyles = StyleSheet.create({
 });
 
 const exampleGroupStyles = StyleSheet.create({
+    container: {
+        display: 'flex',
+        flexDirection: 'row',
+        // On small screens, wrap items around and center
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+    },
     header: {
         fontSize: 40,
         fontWeight: 'bold',
         marginBottom: '.5rem',
         padding: '2rem',
-    },
-    container: {
-        display: 'flex',
-        flexDirection: 'row',
     },
 });
 
