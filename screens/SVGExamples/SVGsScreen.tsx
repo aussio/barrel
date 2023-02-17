@@ -20,6 +20,8 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         alignItems: 'center',
         backgroundColor: 'white',
+        width: '100%',
+        height: '100%',
     },
 });
 
