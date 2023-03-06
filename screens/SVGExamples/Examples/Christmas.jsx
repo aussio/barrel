@@ -1,25 +1,19 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Example, ExampleGroup } from './Example';
-import Grid from './Grid';
+import { Example, ExampleGroup } from '../Example';
+import Grid from '../Grid';
 
-function ChristmasBulb() {
+function Christmas() {
     const width = 400;
     const height = 400;
     return (
         <ExampleGroup title={"Christmas"}>
             <Bulb width={width} height={height} />
             <Tree width={200} height={height} />
+            <GingerbreadMan width={200} height={height} />
         </ExampleGroup >
     )
 }
-
-const styles = StyleSheet.create({
-    tiny: {
-        fontSize: 5,
-        fontWeight: 'bold',
-    }
-});
 
 function Bulb({ width, height }) {
     const red = "#D1495B";
@@ -68,4 +62,52 @@ function Tree({ width, height }) {
     )
 }
 
-export default ChristmasBulb;
+function GingerbreadMan({ width, height }) {
+    return (
+        <Example title={'Lines and round borders'}>
+            <svg width={width} height={height} viewBox="-100, -200, 200, 400" >
+                <Grid xStart={-100} xEnd={100} yStart={-200} yEnd={200} step={50} />
+
+                <circle style={styles.gb.body} cx={0} cy={-50} r={30} />
+
+                <circle style={styles.gb.eye} cx={-12} cy={-55} r={3} />
+                <circle style={styles.gb.eye} cx={12} cy={-55} r={3} />
+                <rect style={styles.gb.mouth} x={-10} y={-40} width={20} height={5} rx={2} />
+
+                <line style={styles.gb.limb} x1={-40} y1={-10} x2={40} y2={-10} />
+                <line style={styles.gb.limb} x1={-25} y1={50} x2={0} y2={-15} />
+                <line style={styles.gb.limb} x1={25} y1={50} x2={0} y2={-15} />
+
+                <circle style={styles.gb.button} cx={0} cy={-10} r={5} />
+                <circle style={styles.gb.button} cx={0} cy={10} r={5} />
+            </svg>
+        </Example>
+    )
+}
+
+const gingerbread = "#cd803d"
+const styles = StyleSheet.create({
+    gb: {
+        body: {
+            fill: gingerbread,
+        },
+        eye: {
+            fill: "white",
+        },
+        mouth: {
+            fill: "none",
+            stroke: "white",
+            strokeWidth: "2px",
+        },
+        limb: {
+            stroke: gingerbread,
+            strokeWidth: "35px",
+            strokeLinecap: "round",
+        },
+        button: {
+            fill: "black",
+        },
+    }
+});
+
+export default Christmas;

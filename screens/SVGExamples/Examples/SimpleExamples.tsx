@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { Example, ExampleGroup } from './Example';
+import { Example, ExampleGroup } from '../Example';
 
 function SimpleExamples() {
     const width: number = 200;

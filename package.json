@@ -5,10 +5,10 @@
   "scripts": {
     "predeploy": "NODE_OPTIONS=--openssl-legacy-provider npx expo export:web",
     "deploy-hosting": "npm run predeploy && firebase deploy --only hosting",
-    "start": "npx expo start",
-    "android": "npx expo start --android",
-    "ios": "npx expo start --ios",
-    "web": "npx expo start --web"
+    "start": "NODE_OPTIONS=--openssl-legacy-provider npx expo start",
+    "android": "NODE_OPTIONS=--openssl-legacy-provider npx expo start --android",
+    "ios": "NODE_OPTIONS=--openssl-legacy-provider npx expo start --ios",
+    "web": "NODE_OPTIONS=--openssl-legacy-provider npx expo start --web"
   },
   "dependencies": {
     "@expo/webpack-config": "^0.17.2",

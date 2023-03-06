@@ -1,8 +1,8 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
-import CoordinateExamples from './CoordinateExamples';
-import SimpleExamples from './SimpleExamples';
-import ChristmasBulb from './ChristmasBulb';
+import CoordinateExamples from './Examples/CoordinateExamples';
+import SimpleExamples from './Examples/SimpleExamples';
+import Christmas from './Examples/Christmas';
 
 function SVGsScreen() {
 
@@ -10,7 +10,7 @@ function SVGsScreen() {
         <View style={styles.container}>
             <SimpleExamples />
             <CoordinateExamples />
-            <ChristmasBulb />
+            <Christmas />
         </View>
     );
 }
